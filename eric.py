@@ -1,0 +1,97 @@
+import numpy as np
+from PIL import Image
+from keras import optimizers
+from keras.models import Sequential
+from tqdm import tqdm
+
+from data import load_mnist
+from dcgan import combine_images
+from model import get_eric_generator, get_eric_discriminator, get_default_generator, get_default_discriminator
+from tools import Tensorboard
+
+
+'''
+    * reduce image size, just 0 and 1, reduce everything !!!
+    * acceleration recompilation
+    
+    * anime
+    
+    * IDEA: garder historique des generated pour entrainer discriminator ???
+'''
+
+
+def get_model():
+    # generator
+    generator = get_default_generator()  # get_eric_generator()
+    generator.summary()
+    sgd_g = optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)  # peut on avoir meme sgd partout ????
+    generator.compile(optimizer=sgd_g, loss='binary_crossentropy')
+
+    # discriminator
+    discriminator = get_eric_discriminator()
+    # pas besoin de batch size ci-dessous ??
+    sgd_d = optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+    discriminator.trainable = True
+    discriminator.compile(optimizer=sgd_d, loss='binary_crossentropy')
+
+    # generator_with_d
+    generator_with_d = Sequential()
+    generator_with_d.add(generator)
+    generator_with_d.add(discriminator)
+    # generator.summary()
+
+    # binary_crossentropy ???     0.67 que vaut ? et 0.8 sans cas generated
+    discriminator.trainable = False
+    sgd_gwd = optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+    generator_with_d.compile(optimizer=sgd_gwd, loss='binary_crossentropy')
+
+    return generator, discriminator, generator_with_d
+
+
+def log_images(generated_images, field1, field2):
+    image = combine_images(generated_images)
+    image = image * 127.5 + 127.5
+    generated_images_output = "generated/" + str(field1) + "_" + str(field2) + ".png"
+    Image.fromarray(image.astype(np.uint8)).save(generated_images_output)
+
+
+EPOCHS = 50
+BATCH_SIZE = 1024  # 1024: 6 seconds by iteration, 1.3s for 128
+
+X_train, y_train = load_mnist(normalize=True)
+generator, discriminator, generator_with_d = get_model()
+
+logger = Tensorboard("logs")
+for epoch in range(EPOCHS):
+    print("epoch = {}".format(epoch))
+    batches = int(X_train.shape[0] / BATCH_SIZE)
+    for i in tqdm(range(batches)):
+        step = (epoch * batches) + i
+        print("step = {}".format(step))
+
+        noise = np.random.uniform(-1.0, 1.0, (BATCH_SIZE, 100))  # mettre 100 de cote
+        generated = generator.predict(noise)
+        if i % 40 == 0:
+            log_images(generated, epoch, i)
+            log_images(generated, "last", "last")
+
+        start_idx = i * BATCH_SIZE
+        end_idx = (i + 1) * BATCH_SIZE
+        X = X_train[start_idx:end_idx]
+        X = np.concatenate((X, generated))
+        # np.concatenate((X_batch, ))
+        y = ([1] * BATCH_SIZE) + ([0] * BATCH_SIZE)
+
+        discriminator.trainable = True
+        discriminator_loss = discriminator.train_on_batch(X, y)  # reset_metrics=True ??  => metrics only for the batch
+        logger.log_scalar("discriminator_loss", discriminator_loss, step)
+        print("discriminator_loss = {}".format(discriminator_loss))
+
+        # discriminator.fit(X_train, y_train, epochs=1)  # validation_data=(X_test, y_test)
+        # # generator.fit(X_train, y_train, epochs=1)
+        y = [1] * BATCH_SIZE
+        discriminator.trainable = False
+        generator_loss = generator_with_d.train_on_batch(noise, y)
+        logger.log_scalar("generator_loss", generator_loss, step)
+        print("generator_loss = {}".format(generator_loss))
+
