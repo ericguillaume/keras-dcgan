@@ -5,6 +5,7 @@ from keras.models import Sequential
 from tqdm import tqdm
 
 from data import load_mnist
+from data_anime import load_anime_faces_processed
 from dcgan import combine_images
 from model import get_default_generator, get_default_discriminator
 from tools import Tensorboard
@@ -57,12 +58,15 @@ def log_images(generated_images, field1, field2):
 
 
 EPOCHS = 100
-BATCH_SIZE = 1024
-RESIZE = 20
+BATCH_SIZE = 64
+IMAGE_SIZE = 96
+IMAGE_COLORS_DIMENSIONS = 3
 
-GENERATOR_INPUT_DIM = 25
+GENERATOR_INPUT_DIM = 100
 
-X_train, y_train = load_mnist(normalize=True, resize=RESIZE)
+# X_train, y_train = load_mnist(normalize=True, resize=RESIZE)
+X_train = load_anime_faces_processed(12000)
+print("X_train.shape = {}".format(X_train.shape))
 generator, discriminator, generator_with_d = get_model()
 
 logger = Tensorboard("logs")
@@ -75,13 +79,14 @@ for epoch in range(EPOCHS):
 
         noise = np.random.uniform(-1.0, 1.0, (BATCH_SIZE, GENERATOR_INPUT_DIM))
         generated = generator.predict(noise)
+        print("generated.shape = {}".format(generated.shape))
         if i % 200 == 0:
             log_images(generated, epoch, i)
             log_images(generated, "last", "last")
 
         start_idx = i * BATCH_SIZE
         end_idx = (i + 1) * BATCH_SIZE
-        X = X_train[start_idx:end_idx] + np.random.normal(loc=0.0, scale=1e-1, size=(BATCH_SIZE, RESIZE, RESIZE, 1))
+        X = X_train[start_idx:end_idx] + np.random.normal(loc=0.0, scale=1e-1, size=(BATCH_SIZE, IMAGE_SIZE, IMAGE_SIZE, IMAGE_COLORS_DIMENSIONS))
         X = np.concatenate((X, generated))
         y = ([1] * BATCH_SIZE) + ([0] * BATCH_SIZE)
 
