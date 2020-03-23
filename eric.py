@@ -80,9 +80,8 @@ for epoch in range(EPOCHS):
         noise = np.random.uniform(-1.0, 1.0, (BATCH_SIZE, GENERATOR_INPUT_DIM))
         generated = generator.predict(noise)
         print("generated.shape = {}".format(generated.shape))
-        if i % 200 == 0:
-            log_images(generated, epoch, i)
-            log_images(generated, "last", "last")
+        log_images(generated, epoch, i)
+        log_images(generated, "last", "last")
 
         start_idx = i * BATCH_SIZE
         end_idx = (i + 1) * BATCH_SIZE
