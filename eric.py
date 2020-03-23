@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 from data import load_mnist
 from dcgan import combine_images
-from model import get_eric_generator, get_eric_discriminator, get_default_generator, get_default_discriminator
+from model import get_default_generator, get_default_discriminator
 from tools import Tensorboard
 
 
@@ -22,14 +22,14 @@ from tools import Tensorboard
 
 def get_model():
     # generator
-    generator = get_default_generator()  # get_eric_generator()
+    generator = get_default_generator()
     generator.summary()
     sgd_g = optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)  # peut on avoir meme sgd partout ????
     generator.compile(optimizer=sgd_g, loss='binary_crossentropy')
 
     # discriminator
-    discriminator = get_eric_discriminator()
-    # pas besoin de batch size ci-dessous ??
+    discriminator = get_default_discriminator()
+    discriminator.summary()
     sgd_d = optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
     discriminator.trainable = True
     discriminator.compile(optimizer=sgd_d, loss='binary_crossentropy')
@@ -38,7 +38,6 @@ def get_model():
     generator_with_d = Sequential()
     generator_with_d.add(generator)
     generator_with_d.add(discriminator)
-    # generator.summary()
 
     # binary_crossentropy ???     0.67 que vaut ? et 0.8 sans cas generated
     discriminator.trainable = False
@@ -55,10 +54,13 @@ def log_images(generated_images, field1, field2):
     Image.fromarray(image.astype(np.uint8)).save(generated_images_output)
 
 
-EPOCHS = 50
-BATCH_SIZE = 1024  # 1024: 6 seconds by iteration, 1.3s for 128
+EPOCHS = 100
+BATCH_SIZE = 1024
+RESIZE = 20
 
-X_train, y_train = load_mnist(normalize=True)
+GENERATOR_INPUT_DIM = 25
+
+X_train, y_train = load_mnist(normalize=True, resize=RESIZE)
 generator, discriminator, generator_with_d = get_model()
 
 logger = Tensorboard("logs")
@@ -69,17 +71,16 @@ for epoch in range(EPOCHS):
         step = (epoch * batches) + i
         print("step = {}".format(step))
 
-        noise = np.random.uniform(-1.0, 1.0, (BATCH_SIZE, 100))  # mettre 100 de cote
+        noise = np.random.uniform(-1.0, 1.0, (BATCH_SIZE, GENERATOR_INPUT_DIM))
         generated = generator.predict(noise)
-        if i % 40 == 0:
+        if i % 200 == 0:
             log_images(generated, epoch, i)
             log_images(generated, "last", "last")
 
         start_idx = i * BATCH_SIZE
         end_idx = (i + 1) * BATCH_SIZE
-        X = X_train[start_idx:end_idx]
+        X = X_train[start_idx:end_idx] + np.random.normal(loc=0.0, scale=1e-1, size=(BATCH_SIZE, RESIZE, RESIZE, 1))
         X = np.concatenate((X, generated))
-        # np.concatenate((X_batch, ))
         y = ([1] * BATCH_SIZE) + ([0] * BATCH_SIZE)
 
         discriminator.trainable = True
@@ -87,8 +88,6 @@ for epoch in range(EPOCHS):
         logger.log_scalar("discriminator_loss", discriminator_loss, step)
         print("discriminator_loss = {}".format(discriminator_loss))
 
-        # discriminator.fit(X_train, y_train, epochs=1)  # validation_data=(X_test, y_test)
-        # # generator.fit(X_train, y_train, epochs=1)
         y = [1] * BATCH_SIZE
         discriminator.trainable = False
         generator_loss = generator_with_d.train_on_batch(noise, y)
