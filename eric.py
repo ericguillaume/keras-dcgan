@@ -24,7 +24,7 @@ def get_model():
     # generator
     generator = get_default_generator()
     generator.summary()
-    sgd_g = optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)  # peut on avoir meme sgd partout ????
+    sgd_g = optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
     generator.compile(optimizer=sgd_g, loss='binary_crossentropy')
 
     # discriminator
@@ -84,7 +84,7 @@ for epoch in range(EPOCHS):
         y = ([1] * BATCH_SIZE) + ([0] * BATCH_SIZE)
 
         discriminator.trainable = True
-        discriminator_loss = discriminator.train_on_batch(X, y)  # reset_metrics=True ??  => metrics only for the batch
+        discriminator_loss = discriminator.train_on_batch(X, y)
         logger.log_scalar("discriminator_loss", discriminator_loss, step)
         print("discriminator_loss = {}".format(discriminator_loss))
 

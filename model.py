@@ -2,7 +2,7 @@ from keras.layers import Dense
 from keras.layers import Reshape
 from keras.layers.convolutional import Conv2D, MaxPooling2D
 from keras.layers.convolutional import UpSampling2D
-from keras.layers.core import Activation
+from keras.layers.core import Activation, Dropout
 from keras.layers.core import Flatten
 from keras.layers.normalization import BatchNormalization
 from keras.models import Sequential
@@ -10,15 +10,20 @@ from keras.models import Sequential
 
 def get_default_generator():
     model = Sequential()
-    model.add(Dense(input_dim=100, output_dim=1024))
+    model.add(Dense(input_dim=25, output_dim=256))
     model.add(Activation('tanh'))
-    model.add(Dense(128 * 7 * 7))
+    model.add(Dropout(0.3))
+
+    model.add(Dense(128 * 5 * 5))
     model.add(BatchNormalization())
     model.add(Activation('tanh'))
-    model.add(Reshape((7, 7, 128), input_shape=(128 * 7 * 7,)))
+    model.add(Dropout(0.3))
+
+    model.add(Reshape((5, 5, 128), input_shape=(128 * 5 * 5,)))
     model.add(UpSampling2D(size=(2, 2)))
-    model.add(Conv2D(64, (5, 5), padding='same'))
+    model.add(Conv2D(16, (5, 5), padding='same'))
     model.add(Activation('tanh'))
+
     model.add(UpSampling2D(size=(2, 2)))
     model.add(Conv2D(1, (5, 5), padding='same'))
     model.add(Activation('tanh'))
@@ -26,21 +31,32 @@ def get_default_generator():
 
 
 def get_default_discriminator():
+    image_input_size = 20
+
     model = Sequential()
     model.add(
-        Conv2D(64, (5, 5),
+        Conv2D(32, (5, 5),
                padding='same',
-               input_shape=(28, 28, 1))
+               input_shape=(image_input_size, image_input_size, 1))
+    )
+    model.add(Activation('tanh'))
+
+    model.add(
+        Conv2D(32, (3, 3),
+               padding='same',
+               input_shape=(image_input_size, image_input_size, 1))
     )
     model.add(Activation('tanh'))
     model.add(MaxPooling2D(pool_size=(2, 2)))
 
-    model.add(Conv2D(128, (5, 5)))
+    model.add(Conv2D(64, (5, 5)))
     model.add(Activation('tanh'))
+    model.add(Dropout(0.3))
     model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Flatten())
 
-    model.add(Dense(1024))
+    model.add(Dense(256))
+    model.add(Dropout(0.3))
     model.add(Activation('tanh'))
 
     model.add(Dense(1))
