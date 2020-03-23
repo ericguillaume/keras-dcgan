@@ -11,8 +11,10 @@ from tools import Tensorboard
 
 
 '''
-    * reduce image size, just 0 and 1, reduce everything !!!
-    * acceleration recompilation
+    * deployment script works with branch name
+    * convergence
+        * gradient avg values
+        * D/G accuracy
     
     * anime
     
