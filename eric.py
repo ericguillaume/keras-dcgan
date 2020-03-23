@@ -58,7 +58,7 @@ def log_images(generated_images, field1, field2):
 
 
 EPOCHS = 100
-BATCH_SIZE = 64
+BATCH_SIZE = 32
 IMAGE_SIZE = 96
 IMAGE_COLORS_DIMENSIONS = 3
 
