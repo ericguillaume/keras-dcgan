@@ -58,9 +58,10 @@ def log_images(generated_images, field1, field2):
 
 EPOCHS = 100
 BATCH_SIZE = 1024
-RESIZE = 20
+RESIZE = None
+INPUT_IMAGE_SIZE = 28
 
-GENERATOR_INPUT_DIM = 25
+GENERATOR_INPUT_NOISE_DIM = 100
 
 X_train, y_train = load_mnist(normalize=True, resize=RESIZE)
 generator, discriminator, generator_with_d = get_model()
@@ -73,7 +74,7 @@ for epoch in range(EPOCHS):
         step = (epoch * batches) + i
         print("step = {}".format(step))
 
-        noise = np.random.uniform(-1.0, 1.0, (BATCH_SIZE, GENERATOR_INPUT_DIM))
+        noise = np.random.uniform(-1.0, 1.0, (BATCH_SIZE, GENERATOR_INPUT_NOISE_DIM))
         generated = generator.predict(noise)
         if i % 200 == 0:
             log_images(generated, epoch, i)
@@ -81,7 +82,7 @@ for epoch in range(EPOCHS):
 
         start_idx = i * BATCH_SIZE
         end_idx = (i + 1) * BATCH_SIZE
-        X = X_train[start_idx:end_idx] + np.random.normal(loc=0.0, scale=1e-1, size=(BATCH_SIZE, RESIZE, RESIZE, 1))
+        X = X_train[start_idx:end_idx] + np.random.normal(loc=0.0, scale=1e-1, size=(BATCH_SIZE, INPUT_IMAGE_SIZE, INPUT_IMAGE_SIZE, 1))
         X = np.concatenate((X, generated))
         y = ([1] * BATCH_SIZE) + ([0] * BATCH_SIZE)
 

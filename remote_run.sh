@@ -1,1 +1,1 @@
-gcloud compute ssh tuto-frankfurt-1 --zone=europe-west4-a < remote_run_impl.sh
+gcloud compute ssh try-cli-1 --zone=europe-west2-c < remote_run_impl.sh
