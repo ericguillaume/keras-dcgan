@@ -1,1 +1,0 @@
-gcloud compute instances create try-cli-1 --zone=europe-west2-c --image-project=deeplearning-platform-release --image-family=tf-2-1-cu100 --maintenance-policy=TERMINATE --accelerator="type=nvidia-tesla-t4,count=1" --metadata="install-nvidia-driver=True" --preemptible

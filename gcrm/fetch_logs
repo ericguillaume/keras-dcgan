@@ -1,0 +1,6 @@
+rm -rf /tmp/generated_mnist
+mkdir -p /tmp/generated_mnist/logs
+mkdir -p /tmp/generated_mnist/generated
+gcloud compute scp $GCRM_MACHINE_NAME:/tmp/logs /tmp/generated_mnist/logs --recurse --compress
+gcloud compute scp $GCRM_MACHINE_NAME:/home/eric/keras-dcgan/generated/last_last.png /tmp/generated_mnist/generated_last_last.png --compress
+gcloud compute scp $GCRM_MACHINE_NAME:/home/eric/keras-dcgan/generated /tmp/generated_mnist/generated --recurse --compress

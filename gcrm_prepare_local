@@ -1,0 +1,3 @@
+args=("$@")
+MACHINE_NAME=${args[0]} 
+ZONE=${args[1]}
